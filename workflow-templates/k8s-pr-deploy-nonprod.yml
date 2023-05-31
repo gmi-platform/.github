@@ -1,0 +1,47 @@
+name: Deploy
+on:
+  pull_request:
+
+jobs:
+  # Builds your container image
+  build-container:
+    uses: gmi-actions/build-container/.github/workflows/build-container.yml@v1
+    with:
+      container_name: ${{ github.event.repository.name }}
+    secrets: inherit
+  
+  # Deploys your application to k8s-applications repository
+  deploy:
+    if: github.ref != 'refs/heads/$default-branch'
+    environment: dev # CHANGE ME TO YOUR DESIRED ENVIRONMENT NAME!!!
+    needs: build-container
+    runs-on: gcp
+    outputs:
+      clusterMatrix: ${{steps.deploy.outputs.clusterMatrix}}
+    steps:
+    - name: deploy
+      id: deploy
+      uses: gmi-actions/deployK8sApplication@v1 
+      with:
+        kubeconfig: ${{secrets.K8S_DEPLOY_KUBECONFIG}}
+        app_env: dev # Kube Namespace ENV Optional, More than likely this will match your Deploy Environment.
+        cluster_env: nonprod
+        # These are your HELM values file overrides. The below contains defaults most projects will use.
+        values: | 
+          image: 
+            repository: ${{needs.build-container.outputs.container_registry}}/${{needs.build-container.outputs.container_name}}
+            tag: ${{needs.build-container.outputs.container_tag}}
+          istio:
+            # Don't forget to setup your environment with Variables. This example uses a github Environment specific Variable.
+            hosts:
+              - ${{ github.event.repository.name }}-${{vars.env_name}}.k8s.genmills.com
+
+  # Deploys your application to the cluster(S) by asking argocd in the cluster to syncronize with your git repository
+  sync:
+    if: github.ref != 'refs/heads/$default-branch'
+    uses: gmi-actions/deployK8sApplication/.github/workflows/sync.yml@v1
+    needs: deploy
+    with:
+      matrix: ${{ needs.deploy.outputs.clusterMatrix }}
+      environment: dev # CHANGE ME TO YOUR DESIRED ENVIRONMENT NAME!!!
+    secrets: inherit

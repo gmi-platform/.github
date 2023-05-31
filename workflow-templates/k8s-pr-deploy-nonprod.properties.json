@@ -1,0 +1,11 @@
+{
+    "name": "k8s-pr-deploy-dev",
+    "description": "Creates a dev deployment workflow that fires when a pull request is opened.",
+    "iconName": "k8s-icon",
+    "categories": [
+        "deployment"
+    ],
+    "filePatterns": [
+        "^Dockerfile"
+    ]
+}

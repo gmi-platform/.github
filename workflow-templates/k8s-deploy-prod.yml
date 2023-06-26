@@ -1,14 +1,16 @@
-name: Deploy
+description: Deploys to Prod when the default branch set on the repository (usually main or master) has code pushed to it(usually after a PR has been merged).
+name: Deploy Production
 on:
   push:
     branches: [ $default-branch ]
 
 jobs:
-  # Builds your container image
+  # Builds and promote your container image
   build-container:
     uses: gmi-actions/build-container/.github/workflows/build-container.yml@v1
     with:
       container_name: ${{ github.event.repository.name }} # Defaults container name to your repository name
+      artifactory_promotion_branch: refs/heads/$default-branch # Set Promotion Branch to this repositories default branch
     secrets: inherit
   
   # Deploys your application to k8s-applications repository
@@ -25,6 +27,7 @@ jobs:
       with:
         kubeconfig: ${{secrets.K8S_DEPLOY_KUBECONFIG}}
         cluster_env: prod
+        app_env: prod
         # These are your HELM values file overrides. The below contains defaults most projects will use.
         values: | 
           image: 

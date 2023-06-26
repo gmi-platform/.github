@@ -53,7 +53,8 @@ jobs:
     uses: gmi-actions/deployK8sApplication/.github/workflows/sync.yml@v1
     needs: dev-deploy
     with:
-      matrix: ${{ needs.deploy.outputs.clusterMatrix }}
+      matrix: ${{ needs.dev-deploy.outputs.clusterMatrix }}
+
       environment: dev # CHANGE ME TO YOUR DESIRED ENVIRONMENT NAME!!!
     secrets: inherit
 

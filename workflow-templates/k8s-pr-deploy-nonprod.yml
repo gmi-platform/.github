@@ -11,12 +11,23 @@ jobs:
   #    - run: mytestcommand --mytestarg 1
   #      shell: bash
   
+  # Converts the repository name into a kebab case safe name that can be used in DNS names and container names.
+  repo-name:
+    runs-on: gcp
+    outputs:
+      safeRepoName: ${{steps.kebabcase.outputs.kebabRepository}}
+    steps:
+      - id: kebabcase
+        uses: gmi-actions/kebabcase@v1
+
   # Builds your container image
   build-container:
-    # needs: tests
+    needs:
+    - repo-name
+    # - tests
     uses: gmi-actions/build-container/.github/workflows/build-container.yml@v1
     with:
-      container_name: ${{ github.event.repository.name }}
+      container_name: ${{ needs.repo-name.outputs.safeRepoName }}
     secrets: inherit
   
   # Deploys your application to k8s-applications repository
@@ -24,11 +35,14 @@ jobs:
     # Ignore dependabot PR's note only works from on: pull_request events. Switch to github.ref_name for pushes.
     if: (!startsWith(github.head_ref, 'dependabot'))
     environment: dev # CHANGE ME TO YOUR DESIRED ENVIRONMENT NAME!!!
-    needs: build-container
+    needs: 
+    - build-container
+    - repo-name
     runs-on: gcp
     outputs:
       clusterMatrix: ${{steps.deploy.outputs.clusterMatrix}}
     steps:
+    - uses: actions/checkout@v4 # Checkout is required to pull the correct catalog-info-yaml
     - name: deploy
       id: deploy
       uses: gmi-actions/deployK8sApplication@v1 
@@ -44,7 +58,7 @@ jobs:
           istio:
             # Don't forget to setup your environment with Variables. This example uses a github Environment specific Variable.
             hosts:
-              - ${{ github.event.repository.name }}-${{vars.env_name}}.k8s.genmills.com
+              - ${{ needs.repo-name.outputs.safeRepoName }}-${{vars.env_name}}.k8s.genmills.com
 
   # Deploys your application to the cluster(S) by asking argocd in the cluster to syncronize with your git repository
   dev-sync:

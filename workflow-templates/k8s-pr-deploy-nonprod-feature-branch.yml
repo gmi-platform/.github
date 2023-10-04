@@ -63,9 +63,10 @@ jobs:
   sync:
     # Ignore dependabot PR's note only works from on: pull_request events. Switch to github.ref_name for pushes.
     if: (!startsWith(github.head_ref, 'dependabot'))
-    needs: repo-name
+    needs:
+    - repo-name
+    - deploy
     uses: gmi-actions/deployK8sApplication/.github/workflows/sync.yml@v1
-    needs: deploy
     with:
       matrix: ${{ needs.deploy.outputs.clusterMatrix }}
       environment: ${{ needs.repo-name.outputs.safeRepoName }}-${{github.head_ref}} # Update deploy status of <repo>-<branch> for deployment tracking

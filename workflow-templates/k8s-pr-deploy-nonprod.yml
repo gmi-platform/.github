@@ -68,7 +68,6 @@ jobs:
     needs: dev-deploy
     with:
       matrix: ${{ needs.dev-deploy.outputs.clusterMatrix }}
-
       environment: dev # CHANGE ME TO YOUR DESIRED ENVIRONMENT NAME!!!
     secrets: inherit
 
@@ -111,6 +110,5 @@ jobs:
   #   needs: qa-deploy
   #   with:
   #     matrix: ${{ needs.qa-deploy.outputs.clusterMatrix }}
-
   #     environment: dev # CHANGE ME TO YOUR DESIRED ENVIRONMENT NAME!!!
   #   secrets: inherit
